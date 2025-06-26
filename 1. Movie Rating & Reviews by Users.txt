@@ -1,0 +1,113 @@
+1. Movie Rating & Reviews by Users
+
+✅ Backend (Express + MongoDB)
+Add a reviews field to the User or create a new Review model:
+
+js
+
+// models/Review.js
+const mongoose = require('mongoose');
+
+const reviewSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  movieId: Number, // TMDB movie ID
+  rating: Number,  // e.g., 1–5
+  comment: String,
+  createdAt: { type: Date, default: Date.now },
+});
+
+module.exports = mongoose.model('Review', reviewSchema);
+✅ API Route: POST /api/reviews
+js
+
+router.post('/reviews', auth, async (req, res) => {
+  const { movieId, rating, comment } = req.body;
+  const review = new Review({
+    userId: req.user.userId,
+    movieId,
+    rating,
+    comment,
+  });
+  await review.save();
+  res.status(201).json({ message: 'Review saved' });
+});
+✅ API Route: GET /api/reviews/:movieId
+js
+
+router.get('/reviews/:movieId', async (req, res) => {
+  const reviews = await Review.find({ movieId: req.params.movieId }).populate('userId', 'username');
+  res.json(reviews);
+});
+✅ Frontend (React)
+In the movie detail or card:
+
+Add a form with a star rating input and comment box
+
+Fetch and display reviews under each movie
+
+2. Auth Context with Context API
+Create src/context/AuthContext.js:
+
+js
+
+import { createContext, useState, useEffect } from 'react';
+
+export const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  return (
+    <AuthContext.Provider value={{ token, setToken }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+Then wrap your app in App.js:
+
+js
+
+import { AuthProvider } from './context/AuthContext';
+
+const App = () => (
+  <AuthProvider>
+    <Router>
+      <Routes>...</Routes>
+    </Router>
+  </AuthProvider>
+);
+And now you can use useContext(AuthContext) in any component for login/logout/token access.
+
+3. Turn React App into a Progressive Web App (PWA)
+✅ Step 1: Install PWA support
+
+bash
+
+npm install --save react-pwa
+Or use default create-react-app PWA setup:
+
+Open index.js
+
+js
+
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+
+// Replace this:
+ReactDOM.render(...);
+
+// Add:
+serviceWorkerRegistration.register();
+Ensure manifest.json has proper config (name, icons, start_url)
+
+Add a favicon or logo192.png for the icon
+
+✅ Bonus:
+On Netlify, PWA will work automatically with HTTPS and service worker enabled.

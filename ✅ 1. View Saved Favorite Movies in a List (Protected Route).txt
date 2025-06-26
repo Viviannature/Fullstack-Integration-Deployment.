@@ -1,0 +1,147 @@
+1. View Saved Favorite Movies in a List (Protected Route)
+
+✅ Backend: Add a GET /favorites Route
+In routes/auth.js (or routes/favorites.js if separate):
+
+js
+
+router.get('/favorites', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    res.json({ favorites: user.favorites });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+✅ Frontend: Display Favorite Movies
+In Home.js, add a section to load and display favorites:
+
+js
+
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const fetchTMDBMovie = async (movieId) => {
+  const res = await axios.get(`https://api.themoviedb.org/3/movie/${movieId}`, {
+    params: {
+      api_key: process.env.REACT_APP_TMDB_API_KEY,
+    },
+  });
+  return res.data;
+};
+
+const Home = () => {
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    const getFavorites = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/auth/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const movieDetails = await Promise.all(
+          res.data.favorites.map((id) => fetchTMDBMovie(id))
+        );
+
+        setFavorites(movieDetails);
+      } catch {
+        alert('Please log in to view favorites');
+      }
+    };
+
+    getFavorites();
+  }, []);
+
+  return (
+    <div>
+      <h2>My Favorite Movies</h2>
+      <ul>
+        {favorites.map((movie) => (
+          <li key={movie.id}>
+            <strong>{movie.title}</strong> ({movie.release_date?.slice(0, 4)})
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+📱 2. Make the Design Responsive/Mobile-Friendly
+Add Tailwind CSS (or use Bootstrap if you prefer).
+
+🌀 Install Tailwind CSS:
+bash
+
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+Update tailwind.config.js:
+
+js
+
+content: ["./src/**/*.{js,jsx,ts,tsx}"],
+Update index.css:
+
+css
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+Now update components like this:
+
+jsx
+
+<input
+  className="p-2 border rounded w-full max-w-md"
+  placeholder="Search by title"
+  ...
+/>
+<button className="bg-blue-600 text-white px-4 py-2 rounded mt-2">
+  Search
+</button>
+Use responsive utilities like md:w-1/2, flex-wrap, grid, gap-4, etc.
+
+💡 3. Create a Recommendations Section (TMDB-Based)
+✅ Option 1: Use TMDB's /movie/popular or /movie/top_rated
+In tmdb.js:
+
+js
+
+export const getPopularMovies = async () => {
+  const res = await axios.get(`${BASE_URL}/movie/popular`, {
+    params: { api_key: API_KEY },
+  });
+  return res.data.results;
+};
+✅ Recommendations Component:
+jsx
+
+// src/components/Recommendations.js
+import React, { useEffect, useState } from 'react';
+import { getPopularMovies } from '../services/tmdb';
+
+const Recommendations = () => {
+  const [movies, setMovies] = useState([]);
+
+  useEffect(() => {
+    getPopularMovies().then(setMovies);
+  }, []);
+
+  return (
+    <div>
+      <h2>Recommended for You</h2>
+      <div className="grid md:grid-cols-3 gap-4">
+        {movies.map(movie => (
+          <div key={movie.id} className="border p-2 rounded">
+            <h3>{movie.title}</h3>
+            <p>{movie.overview?.slice(0, 100)}...</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+

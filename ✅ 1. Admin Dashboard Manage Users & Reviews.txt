@@ -1,0 +1,244 @@
+1. Admin Dashboard: Manage Users & Reviews
+Create a new route like /admin:
+
+Protected with both <PrivateRoute> and role === 'admin'
+
+Show:
+
+List of users with delete or promote buttons
+
+List of all reviews (with movieId, rating, user, and delete)
+
+
+
+🪄 2. Animated Loading Skeletons (React + Tailwind)
+Use react-loading-skeleton or create your own with Tailwind:
+
+bash
+
+npm install react-loading-skeleton
+In your component:
+
+jsx
+
+import Skeleton from 'react-loading-skeleton';
+
+{loading ? (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {[...Array(8)].map((_, i) => (
+      <div key={i} className="p-4">
+        <Skeleton height={200} />
+        <Skeleton height={20} width={120} className="mt-2" />
+      </div>
+    ))}
+  </div>
+) : (
+  // render real movies
+)}
+📧 3. Email Verification & Password Reset (with Nodemailer)
+Backend Flow:
+Send email with token on registration or "forgot password"
+
+Token links to a reset route (/reset/:token)
+
+On form submit, update user password
+
+Example:
+bash
+
+npm install nodemailer crypto
+Then:
+
+js
+
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+Use Gmail or Mailtrap to send messages. You'll also need to store a resetToken and resetExpires field in the user model.
+
+
+🧱 1. Admin Dashboard (Users + Reviews)
+✅ Backend: Admin Routes
+js
+
+// middleware/isAdmin.js
+const isAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+  next();
+};
+js
+
+// routes/admin.js
+const express = require('express');
+const router = express.Router();
+const User = require('../models/User');
+const Review = require('../models/Review');
+const auth = require('../middleware/auth');
+const isAdmin = require('../middleware/isAdmin');
+
+router.get('/users', auth, isAdmin, async (req, res) => {
+  const users = await User.find().select('-password');
+  res.json(users);
+});
+
+router.delete('/users/:id', auth, isAdmin, async (req, res) => {
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ message: 'User deleted' });
+});
+
+router.get('/reviews', auth, isAdmin, async (req, res) => {
+  const reviews = await Review.find().populate('userId', 'username');
+  res.json(reviews);
+});
+
+router.delete('/reviews/:id', auth, isAdmin, async (req, res) => {
+  await Review.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Review deleted' });
+});
+
+module.exports = router;
+✅ Frontend: AdminDashboard.js
+jsx
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const AdminDashboard = () => {
+  const [users, setUsers] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const token = localStorage.getItem('token');
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    axios.get('/api/admin/users', { headers }).then(res => setUsers(res.data));
+    axios.get('/api/admin/reviews', { headers }).then(res => setReviews(res.data));
+  }, []);
+
+  const deleteUser = async (id) => {
+    await axios.delete(`/api/admin/users/${id}`, { headers });
+    setUsers(users.filter(u => u._id !== id));
+  };
+
+  const deleteReview = async (id) => {
+    await axios.delete(`/api/admin/reviews/${id}`, { headers });
+    setReviews(reviews.filter(r => r._id !== id));
+  };
+
+  return (
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+
+      <div>
+        <h3 className="font-semibold">Users</h3>
+        <ul className="space-y-1">
+          {users.map(user => (
+            <li key={user._id} className="flex justify-between items-center">
+              <span>{user.username} ({user.role})</span>
+              <button onClick={() => deleteUser(user._id)} className="text-red-500">Delete</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-6">
+        <h3 className="font-semibold">Reviews</h3>
+        <ul className="space-y-1">
+          {reviews.map(review => (
+            <li key={review._id} className="flex justify-between">
+              <span>
+                <b>{review.userId?.username}</b>: ⭐ {review.rating} - {review.comment}
+              </span>
+              <button onClick={() => deleteReview(review._id)} className="text-red-500">Delete</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
+
+📧 2. Email Password Reset (Nodemailer)
+✅ Step 1: Update User Schema
+js
+
+resetToken: String,
+resetTokenExpires: Date
+
+✅ Step 2: Forgot Password Endpoint
+js
+
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+router.post('/forgot-password', async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+
+  const token = crypto.randomBytes(20).toString('hex');
+  user.resetToken = token;
+  user.resetTokenExpires = Date.now() + 3600000; // 1 hour
+  await user.save();
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+
+  const mailOptions = {
+    to: user.email,
+    subject: 'Password Reset',
+    html: `<a href="http://localhost:3000/reset/${token}">Reset Password</a>`,
+  };
+
+  transporter.sendMail(mailOptions);
+  res.json({ message: 'Email sent' });
+});
+
+✅ Step 3: Reset Password Endpoint
+js
+
+router.post('/reset/:token', async (req, res) => {
+  const user = await User.findOne({
+    resetToken: req.params.token,
+    resetTokenExpires: { $gt: Date.now() },
+  });
+
+  if (!user) return res.status(400).json({ message: 'Token invalid/expired' });
+
+  user.password = await bcrypt.hash(req.body.password, 10);
+  user.resetToken = undefined;
+  user.resetTokenExpires = undefined;
+  await user.save();
+
+  res.json({ message: 'Password updated' });
+});
+
+
+🪄 3. Animated Loading Skeletons (React + Tailwind)
+Install:
+
+bash
+
+npm install react-loading-skeleton
+In MovieGrid.js:
+
+jsx
+
+import Skeleton from 'react-loading-skeleton';
+
+{loading ? (
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    {[...Array(8)].map((_, i) => (
+      <div key={i} className="p-4">
+        <Skeleton height={250} />
+        <Skeleton width={140} className="mt-2" />
+      </div>
+    ))}
+  </div>
+) : (
+  <MovieList movies={movies} />
+)}
+
+

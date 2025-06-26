@@ -1,0 +1,193 @@
+✅ 1. Live Preview of Review Component
+🧩 Backend: Create Reviews API (if not already)
+POST /api/reviews – Submit a review
+GET /api/reviews/:movieId – Get all reviews for a movie
+
+🧱 React Review Component
+src/components/ReviewSection.js:
+
+jsx
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const ReviewSection = ({ movieId }) => {
+  const [reviews, setReviews] = useState([]);
+  const [form, setForm] = useState({ rating: '', comment: '' });
+  const token = localStorage.getItem('token');
+
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/reviews/${movieId}`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error('Failed to fetch reviews', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [movieId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/reviews`,
+        { movieId, ...form },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setForm({ rating: '', comment: '' });
+      fetchReviews(); // Auto-refresh reviews
+    } catch (err) {
+      alert('Login required or invalid submission.');
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <h3 className="text-lg font-bold mb-2">Leave a Review</h3>
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <input
+          type="number"
+          min="1"
+          max="5"
+          name="rating"
+          value={form.rating}
+          placeholder="Rating (1–5)"
+          onChange={(e) => setForm({ ...form, rating: e.target.value })}
+          className="border p-1 rounded w-20"
+          required
+        />
+        <textarea
+          name="comment"
+          value={form.comment}
+          placeholder="Your review"
+          onChange={(e) => setForm({ ...form, comment: e.target.value })}
+          className="w-full border p-2 rounded"
+          required
+        />
+        <button className="bg-blue-600 text-white px-3 py-1 rounded" type="submit">Submit</button>
+      </form>
+
+      <h4 className="mt-4 font-semibold">Reviews</h4>
+      <ul className="space-y-2">
+        {reviews.map((r, index) => (
+          <li key={index} className="border p-2 rounded shadow">
+            <strong>{r.userId?.username || 'Anonymous'}:</strong> ⭐ {r.rating}
+            <p>{r.comment}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+
+🧩 How to Use It:
+In your movie page or MovieDetails.js:
+
+jsx
+
+<ReviewSection movieId={movie.id} />
+
+✅ 2. Logout + Profile Component
+🔐 Logout Button (Anywhere)
+jsx
+
+
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+const LogoutButton = () => {
+  const { setToken } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const logout = () => {
+    setToken(null);
+    navigate('/login');
+  };
+
+  return <button onClick={logout} className="text-red-500 font-bold">Logout</button>;
+};
+
+export default LogoutButton;
+👤 User Profile Page
+src/components/Profile.js:
+
+jsx
+
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const Profile = () => {
+  const [user, setUser] = useState(null);
+  const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/auth/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data);
+      } catch (err) {
+        console.error('Profile fetch failed');
+      }
+    };
+    fetchUser();
+  }, []);
+
+  return user ? (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-2">My Profile</h2>
+      <p><strong>Username:</strong> {user.username}</p>
+      <p><strong>Favorites:</strong> {user.favorites?.length} saved</p>
+    </div>
+  ) : (
+    <p>Loading profile...</p>
+  );
+};
+
+export default Profile;
+
+Add to Routes
+jsx
+
+
+<Route
+  path="/profile"
+  element={
+    <PrivateRoute>
+      <Profile />
+    </PrivateRoute>
+  }
+/>
+
+✅ 3. Auto-Refresh Favorites and Ratings After Submission
+You already saw this used in the ReviewSection:
+
+js
+
+
+fetchReviews(); // Called after review submission
+Do the same for favorites:
+
+In Home.js or Favorites.js:
+js
+
+
+const handleSaveMovie = async (movie) => {
+  const token = localStorage.getItem('token');
+  try {
+    await axios.post(`${API}/auth/favorites`, { movieId: movie.id }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    alert('Saved!');
+    fetchFavorites(); // Refresh
+  } catch (err) {
+    alert('Failed to save movie');
+  }
+};

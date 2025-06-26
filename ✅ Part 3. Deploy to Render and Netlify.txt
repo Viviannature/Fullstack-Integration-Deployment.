@@ -1,0 +1,54 @@
+Part 3: Deploy to Render and Netlify
+
+✅ Backend Deployment (Render)
+
+1.Push your backend code to GitHub.
+
+2.Go to https://render.com → New → Web Service.
+
+3.Connect your GitHub repo.
+
+4.Choose:
+
+	Build Command: npm install
+
+	Start Command: node index.js or npm start
+
+5.Add these Environment Variables:
+
+	PORT = 10000 (or any)
+
+	MONGO_URI = your MongoDB Atlas URL
+
+	JWT_SECRET = your secret
+
+6.Click Deploy. Copy your backend URL (e.g., https://movie-app-api.onrender.com).
+
+
+✅ Frontend Deployment (Netlify)
+
+1.Push React app (movie-app-frontend) to GitHub.
+
+2.Go to https://netlify.com → New site from Git.
+
+3.Connect GitHub repo.
+
+4.Set Build Command: npm run build
+
+5.Set Publish Directory: build
+
+6.Add Environment Variables:
+
+	REACT_APP_API_BASE_URL=https://your-backend-url.onrender.com
+
+	REACT_APP_TMDB_API_KEY=your_tmdb_api_key
+
+7.Deploy! 🎉
+
+
+✅ Final Recap
+🔍 You can now search movies via TMDB.
+
+❤️ Logged-in users can save favorites to MongoDB.
+
+🌍 App can be deployed live using Render + Netlify.

@@ -1,0 +1,152 @@
+1. Clean Code Structure: Pages, Components, Layouts
+
+
+✅ Recommended Folder Structure
+bash
+
+src/
+├── assets/              # images, logos, icons
+├── components/          # small reusable components (buttons, cards)
+│   ├── Navbar.js
+│   ├── LogoutButton.js
+│   └── MovieCard.js
+├── context/             # global auth or theme context
+│   └── AuthContext.js
+├── layouts/             # layout components (Header/Footer wrappers)
+│   └── MainLayout.js
+├── pages/               # full page views
+│   ├── Home.js
+│   ├── Login.js
+│   ├── Register.js
+│   ├── Profile.js
+│   └── MovieDetails.js
+├── services/            # API utilities
+│   └── tmdb.js
+├── App.js
+└── index.js
+
+✅ Main Layout Example
+src/layouts/MainLayout.js:
+
+jsx
+
+import Navbar from '../components/Navbar';
+
+const MainLayout = ({ children }) => (
+  <div>
+    <Navbar />
+    <main className="p-4 max-w-7xl mx-auto">{children}</main>
+  </div>
+);
+
+export default MainLayout;
+In App.js wrap all pages:
+
+jsx
+
+<Route
+  path="/profile"
+  element={
+    <PrivateRoute>
+      <MainLayout><Profile /></MainLayout>
+    </PrivateRoute>
+  }
+/>
+
+📲 2. PWA: Custom Icons + Splash Screen
+
+✅ 1. Add Custom Icons
+In public/:
+
+	Replace or add:
+
+	favicon.ico
+
+	logo192.png
+
+	logo512.png (important for install prompt)
+
+Use an online generator if needed: https://realfavicongenerator.net/
+
+✅ 2. Update manifest.json
+json
+
+{
+  "short_name": "MovieApp",
+  "name": "Movie Recommendation App",
+  "icons": [
+    {
+      "src": "logo192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+
+✅ 3. Enable Service Worker
+In index.js:
+
+js
+
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+serviceWorkerRegistration.register();
+On deployment, your app will now be installable on mobile and desktop! ✅
+
+🧪 3. Basic Unit Tests (Jest + React Testing Library)
+✅ Setup 
+If not, install:
+
+bash
+
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+
+✅ Example Test: MovieCard.test.js
+jsx
+
+import { render, screen } from '@testing-library/react';
+import MovieCard from './MovieCard';
+
+const mockMovie = {
+  title: 'Inception',
+  release_date: '2010-07-16',
+  poster_path: '/image.jpg',
+};
+
+test('renders movie card with title', () => {
+  render(<MovieCard movie={mockMovie} />);
+  const titleElement = screen.getByText(/Inception/i);
+  expect(titleElement).toBeInTheDocument();
+});
+
+
+✅ Running Tests
+bash
+
+npm test
+You can also test:
+
+🔐 PrivateRoute (redirects when no token)
+
+🧪 Login form (renders inputs, handles submit)
+
+❤️ Favorites list (renders movie cards)
+
+📌 Bonus: Add Coverage
+bash
+
+npm test -- --coverage
+
+✅ Summary: What’s Done
+✅ Clean folder structure using pages, components, layouts
+✅ PWA with install button, custom icon, splash screen
+✅ Working unit tests with Jest & React Testing Library
+

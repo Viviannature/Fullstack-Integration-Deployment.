@@ -1,0 +1,34 @@
+4. Deployment Steps
+
+🔹 Frontend (Netlify or Vercel)
+
+1.Push React app to GitHub
+
+2.Go to Netlify or Vercel
+
+3.Connect your GitHub repo
+
+4.Add environment variable: REACT_APP_TMDB_API_KEY
+
+5.Build command: npm run build
+
+6.Publish folder: build/
+
+
+🔹 Backend (Render)
+
+1.Push backend code to GitHub
+
+2.Go to Render
+
+3.New Web Service → Connect GitHub repo
+
+4.Add environment variables:
+
+	MONGO_URI
+
+	JWT_SECRET
+
+5.Build command: npm install
+
+6.Start command: node index.js or npm start

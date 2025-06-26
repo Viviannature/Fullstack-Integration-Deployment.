@@ -1,0 +1,124 @@
+1. Role-Based Access Control (e.g., Admin Users)
+✅ Backend: Add role to User Schema
+js
+
+// models/User.js
+const userSchema = new mongoose.Schema({
+  username: String,
+  email: String,
+  password: String,
+  role: { type: String, default: 'user' } // or 'admin'
+});
+
+✅ Middleware: isAdmin.js
+js
+
+const isAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  next();
+};
+
+module.exports = isAdmin;
+✅ Protect Routes
+js
+
+router.delete('/reviews/:id', auth, isAdmin, async (req, res) => {
+  await Review.findByIdAndDelete(req.params.id);
+  res.send({ message: 'Review deleted by admin' });
+});
+
+🗂 2. Pagination or Infinite Scroll for Movie Search
+
+✅ TMDB API supports page param
+js
+
+const getMovies = async (query, page = 1) => {
+  const res = await axios.get(`${BASE_URL}/search/movie`, {
+    params: {
+      api_key: API_KEY,
+      query,
+      page
+    }
+  });
+  return res.data;
+};
+
+✅ Frontend: Load More Button (Basic Pagination)
+js
+
+const [page, setPage] = useState(1);
+
+useEffect(() => {
+  fetchMovies(query, page).then(newData => {
+    setMovies(prev => [...prev, ...newData.results]);
+  });
+}, [page]);
+jsx
+Copy
+Edit
+<button onClick={() => setPage(p => p + 1)}>Load More</button>
+
+✅ Infinite Scroll (Bonus)
+Use react-intersection-observer or window scroll position:
+
+bash
+
+npm install react-intersection-observer
+Then:
+
+jsx
+
+import { useInView } from 'react-intersection-observer';
+
+const { ref, inView } = useInView();
+
+useEffect(() => {
+  if (inView) setPage(p => p + 1);
+}, [inView]);
+
+return <div ref={ref}></div>; // Place at the end of movie grid
+
+📊 3. Charts for Ratings or Activity
+Use Recharts or Chart.js:
+
+✅ Example: Ratings Bar Chart
+Install Recharts:
+
+bash
+
+npm install recharts
+jsx
+
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+const RatingChart = ({ reviews }) => {
+  const data = [1, 2, 3, 4, 5].map(r => ({
+    rating: r,
+    count: reviews.filter(rv => rv.rating === r).length
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data}>
+        <XAxis dataKey="rating" />
+        <YAxis />
+        <Tooltip />
+        <Bar dataKey="count" fill="#8884d8" />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+};
+Use inside ReviewSection.js:
+
+jsx
+
+{reviews.length > 0 && <RatingChart reviews={reviews} />}
+
+✅ What’s Covered:
+🔐 Admin-only routes with role-based protection
+
+🔄 Pagination and infinite scroll for movie search
+
+📊 Beautiful charts showing rating distribution or user activity

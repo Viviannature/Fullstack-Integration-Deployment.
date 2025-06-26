@@ -1,0 +1,58 @@
+Part 2: Save Favorite Movies to Backend (Protected Route)
+
+✅ Backend: Add Save Favorite Route
+In routes/auth.js (or create routes/favorites.js):
+
+js
+
+// Add to top of file
+const auth = require('../middleware/auth');
+
+// Add this route
+router.post('/favorites', auth, async (req, res) => {
+  const { movieId } = req.body;
+  const user = await User.findById(req.user.userId);
+  if (!user.favorites.includes(movieId)) {
+    user.favorites.push(movieId);
+    await user.save();
+  }
+  res.json({ message: 'Movie saved to favorites' });
+});
+
+✅ Frontend: Save Movie
+Update src/components/Home.js:
+
+js
+
+import React from 'react';
+import MovieSearch from './MovieSearch';
+import axios from 'axios';
+
+const Home = () => {
+  const handleSaveMovie = async (movie) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/auth/favorites`,
+        { movieId: movie.id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert('Movie saved to favorites!');
+    } catch (err) {
+      alert('Login required or error saving movie.');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Welcome to Movie App</h2>
+      <MovieSearch onSave={handleSaveMovie} />
+    </div>
+  );
+};
+
+export default Home;

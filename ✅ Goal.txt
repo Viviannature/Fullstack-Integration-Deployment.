@@ -1,0 +1,197 @@
+Goal:
+
+Build a React app that:
+
+Registers and logs in users via your Express backend
+
+Stores the JWT token in localStorage
+
+Allows navigation between login, register, and movie pages
+
+🧱 Step 1: React Project Setup
+
+In your terminal:
+
+bash
+
+npx create-react-app movie-app-frontend
+cd movie-app-frontend
+npm install axios react-router-dom
+
+📁 Folder Structure
+pgsql
+
+movie-app-frontend/
+├── src/
+│   ├── components/
+│   │   ├── Login.js
+│   │   ├── Register.js
+│   │   └── Home.js
+│   ├── App.js
+│   ├── index.js
+
+✅ Step 2: Set up Routing (App.js)
+js
+
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './components/Login';
+import Register from './components/Register';
+import Home from './components/Home';
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+Step 3: Environment Variable
+Create .env file in the root of movie-app-frontend:
+
+bash
+
+REACT_APP_API_BASE_URL=http://localhost:5000/api
+Then restart the React dev server (npm start).
+
+Step 4: Register Component
+js
+
+// src/components/Register.js
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const Register = () => {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const navigate = useNavigate();
+
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    try {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/register`, form);
+      alert('Registration successful');
+      navigate('/login');
+    } catch (err) {
+      alert(err.response.data.message || 'Registration failed');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Register</h2>
+      <input name="username" placeholder="Username" onChange={handleChange} required />
+      <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
+      <button type="submit">Register</button>
+    </form>
+  );
+};
+
+export default Register;
+
+🔐 Step 5: Login Component
+js
+
+// src/components/Login.js
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const Login = () => {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const navigate = useNavigate();
+
+  const handleChange = e => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, form);
+      localStorage.setItem('token', res.data.token);
+      alert('Login successful');
+      navigate('/');
+    } catch (err) {
+      alert(err.response.data.message || 'Login failed');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Login</h2>
+      <input name="username" placeholder="Username" onChange={handleChange} required />
+      <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
+      <button type="submit">Login</button>
+    </form>
+  );
+};
+
+export default Login;
+
+🏠 Step 6: Home Component (Protected Page)
+js
+
+// src/components/Home.js
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const Home = () => {
+  const [message, setMessage] = useState('Loading...');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setMessage('You are not logged in.');
+        return;
+      }
+
+      try {
+        // Dummy protected call (you can create one later in backend)
+        setMessage('Welcome! You are logged in.');
+      } catch (err) {
+        setMessage('Invalid or expired token.');
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  return (
+    <div>
+      <h2>{message}</h2>
+    </div>
+  );
+};
+
+export default Home;
+
+✅ Final Test
+1. Start your backend:
+
+bash
+
+node index.js
+2. Start your React frontend:
+
+bash
+
+npm start
+Visit /register to create an account
+
+Visit /login to log in and store the token
+
+Visit / (Home) to check login status

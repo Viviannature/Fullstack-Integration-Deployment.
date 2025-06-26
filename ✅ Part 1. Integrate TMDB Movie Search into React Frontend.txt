@@ -1,0 +1,75 @@
+Part 1: Integrate TMDB Movie Search into React Frontend
+
+✅ Step 1: Get TMDB API Key
+
+1.Create a free account at https://www.themoviedb.org.
+
+2.Go to Settings → API and request a Developer API key.
+
+3.Add it to your .env file in React:
+
+env
+
+REACT_APP_TMDB_API_KEY=your_api_key_here
+
+✅ Step 2: Create TMDB Service
+Create a file: src/services/tmdb.js
+
+js
+
+import axios from 'axios';
+
+const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
+const BASE_URL = 'https://api.themoviedb.org/3';
+
+export const searchMovies = async (query) => {
+  const res = await axios.get(`${BASE_URL}/search/movie`, {
+    params: {
+      api_key: API_KEY,
+      query,
+    },
+  });
+  return res.data.results;
+};
+
+✅ Step 3: Build Movie Search Component
+Create: src/components/MovieSearch.js
+
+js
+
+import React, { useState } from 'react';
+import { searchMovies } from '../services/tmdb';
+
+const MovieSearch = ({ onSave }) => {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  const handleSearch = async () => {
+    const movies = await searchMovies(query);
+    setResults(movies);
+  };
+
+  return (
+    <div>
+      <h2>Search Movies</h2>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by title"
+      />
+      <button onClick={handleSearch}>Search</button>
+
+      <ul>
+        {results.map((movie) => (
+          <li key={movie.id}>
+            {movie.title} ({movie.release_date?.slice(0, 4)})
+            <button onClick={() => onSave(movie)}>❤️ Save</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default MovieSearch;
