@@ -108,14 +108,6 @@ Deployment:
 
 A full-featured, fullstack movie platform built with React, Express, and MongoDB, powered by the TMDB API.
 
----
-
-## 🔗 Live Demo
-
-- **Frontend** (Netlify): [https://your-app.netlify.app](https://your-app.netlify.app)
-- **Backend** (Render): [https://your-api.onrender.com](https://your-api.onrender.com)
-
----
 
 ## 🚀 Features
 
